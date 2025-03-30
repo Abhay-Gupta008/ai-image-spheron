@@ -1,16 +1,16 @@
-# Standard packages
+# Standard packages (will use PyPI)
 fastapi==0.95.2
-uvicorn==0.22.0
+uvicorn==0.23.2  # Updated version
 python-multipart==0.0.6
 
-# Hugging Face ecosystem
+# Hugging Face packages
 transformers==4.34.1
 diffusers==0.24.0
 accelerate==0.25.0
 huggingface-hub==0.17.3
 tokenizers==0.14.1
 
-# PyTorch with CUDA 11.8
+# PyTorch packages (will use custom index)
 --extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.1.0
 torchvision==0.16.0
