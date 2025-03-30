@@ -29,6 +29,5 @@ def generate():
 
     return jsonify({"image": img_str})
 
-if __name__ == '__main__':
-    # Run the Flask server
-    app.run(host='0.0.0.0', port=5000)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8001)  # Change port to 8001 or any other port
