@@ -1,81 +1,32 @@
-import os
-import io
-import torch
-from fastapi import FastAPI, Form, Response
-from fastapi.responses import HTMLResponse
+from flask import Flask, request, jsonify
 from diffusers import StableDiffusionPipeline
+import torch
+import base64
+from io import BytesIO
+from PIL import Image
 
-app = FastAPI()
+app = Flask(__name__)
 
-@app.get("/")
-async def home():
-    return {"message": "Server is running!"}
+# Load AI model
+print("Loading Stable Diffusion model...")
+model = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
+model.to("cuda" if torch.cuda.is_available() else "cpu")
 
-MODEL_CACHE = os.path.join(os.getcwd(), "model_cache")  # Ensures correct path
+@app.route('/generate', methods=['POST'])
+def generate():
+    """Generate an image based on the given text prompt"""
+    data = request.json
+    prompt = data.get("prompt", "A futuristic city at night")
 
-@app.on_event("startup")
-async def load_model():
-    global pipe
-    
-    os.makedirs(MODEL_CACHE, exist_ok=True)
-    
-    # Load Stable Diffusion model
-    pipe = StableDiffusionPipeline.from_pretrained(
-        "CompVis/stable-diffusion-v1-4",
-        torch_dtype=torch.float16,
-        cache_dir=MODEL_CACHE
-    ).to("cuda" if torch.cuda.is_available() else "cpu")
-    
-    pipe.enable_attention_slicing()
+    print(f"Generating image for prompt: {prompt}")
+    image = model(prompt).images[0]
 
-    # Handle CPU/GPU optimization
-    if torch.cuda.is_available():
-        pipe.enable_xformers_memory_efficient_attention()
-        try:
-            from accelerate import __version__  # Check if accelerate is installed
-            pipe.enable_model_cpu_offload()
-        except ImportError:
-            print("[WARNING] `accelerate` not installed. Skipping CPU offload.")
-    else:
-        pipe.enable_sequential_cpu_offload()
+    # Convert image to base64 format for easy transmission
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
 
-@app.post("/generate")
-async def generate(
-    prompt: str = Form(...),
-    steps: int = Form(20)
-):
-    try:
-        steps = max(10, min(steps, 30))  # Limit steps between 10-30
-        
-        # Generate the image
-        image = pipe(
-            prompt=prompt,
-            num_inference_steps=steps,
-            guidance_scale=7.5,
-            height=512,
-            width=512
-        ).images[0]
-        
-        # Convert image to bytes
-        img_byte_arr = io.BytesIO()
-        image.save(img_byte_arr, format="PNG")
-        
-        return Response(
-            content=img_byte_arr.getvalue(),
-            media_type="image/png",
-            headers={"Content-Disposition": "filename=generated_image.png"}
-        )
-    except Exception as e:
-        return Response(
-            content=f"Error: {str(e)}",
-            status_code=500,
-            media_type="text/plain"
-        )
+    return jsonify({"image": img_str})
 
-@app.get("/health")
-async def health_check():
-    return {
-        "status": "OK",
-        "gpu_available": torch.cuda.is_available(),
-        "gpu_name": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None"
-    }
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
