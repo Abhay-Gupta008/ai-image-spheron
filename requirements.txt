@@ -6,7 +6,7 @@ python-multipart==0.0.6
 # Hugging Face packages (use PyPI)
 transformers==4.34.1
 diffusers==0.19.3
-accelerate==0.25.0
+accelerate
 huggingface-hub==0.17.3
 tokenizers==0.14.1
 
