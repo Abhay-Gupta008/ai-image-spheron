@@ -131,5 +131,7 @@ async def health_check():
     except requests.exceptions.RequestException:
         return {"status": "unhealthy", "gpu_service": "unreachable"}
 
+# Ensure this is at the bottom of your file:
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
