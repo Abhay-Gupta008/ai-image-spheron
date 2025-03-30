@@ -1,9 +1,6 @@
-# Use PyTorch custom index for CUDA compatibility
---extra-index-url https://download.pytorch.org/whl/cu118
-
-# Standard packages (PyPI)
-fastapi>=0.95,<1.0
-uvicorn==0.23.2
+# Standard packages (will use PyPI)
+fastapi==0.95.2
+uvicorn==0.22.0
 python-multipart==0.0.6
 
 # Hugging Face packages
@@ -13,9 +10,8 @@ accelerate==0.25.0
 huggingface-hub==0.17.3
 tokenizers==0.14.1
 
-# PyTorch packages
+# PyTorch packages (use custom index)
+--extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.1.0
 torchvision==0.16.0
-
-# Xformers (Only for Linux x86_64)
-xformers==0.0.22.post4; sys_platform == "linux" and platform_machine == "x86_64"
+xformers==0.0.22.post4; sys_platform == 'linux' and platform_machine == 'x86_64'
