@@ -6,30 +6,36 @@ from fastapi.responses import HTMLResponse
 from diffusers import StableDiffusionPipeline
 
 app = FastAPI()
+
 @app.get("/")
 async def home():
     return {"message": "Server is running!"}
-MODEL_CACHE = "/tmp/model_cache"
+
+MODEL_CACHE = os.path.join(os.getcwd(), "model_cache")  # Ensures correct path
 
 @app.on_event("startup")
 async def load_model():
     global pipe
     
-    # Create model cache directory if it doesn't exist
     os.makedirs(MODEL_CACHE, exist_ok=True)
     
-    # Load the Stable Diffusion model without Hugging Face API
+    # Load Stable Diffusion model
     pipe = StableDiffusionPipeline.from_pretrained(
         "CompVis/stable-diffusion-v1-4",
         torch_dtype=torch.float16,
         cache_dir=MODEL_CACHE
     ).to("cuda" if torch.cuda.is_available() else "cpu")
     
-    # Optimize memory usage
     pipe.enable_attention_slicing()
+
+    # Handle CPU/GPU optimization
     if torch.cuda.is_available():
         pipe.enable_xformers_memory_efficient_attention()
-        pipe.enable_model_cpu_offload()
+        try:
+            from accelerate import __version__  # Check if accelerate is installed
+            pipe.enable_model_cpu_offload()
+        except ImportError:
+            print("[WARNING] `accelerate` not installed. Skipping CPU offload.")
     else:
         pipe.enable_sequential_cpu_offload()
 
