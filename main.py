@@ -6,7 +6,9 @@ from fastapi.responses import HTMLResponse
 from diffusers import StableDiffusionPipeline
 
 app = FastAPI()
-
+@app.get("/")
+async def home():
+    return {"message": "Server is running!"}
 MODEL_CACHE = "/tmp/model_cache"
 
 @app.on_event("startup")
