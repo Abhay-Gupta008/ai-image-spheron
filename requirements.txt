@@ -1,10 +1,12 @@
-fastapi==0.95.2
-uvicorn==0.22.0
-diffusers==0.19.3
-transformers==4.31.0
+--extra-index-url https://download.pytorch.org/whl/cu118
 torch==2.1.0
 torchvision==0.16.0
-torchaudio==2.1.0
-accelerate==0.21.0
+transformers==4.34.1
+diffusers==0.24.0
+accelerate==0.25.0
+huggingface-hub==0.17.3
+tokenizers==0.14.1
+fastapi==0.95.2
+uvicorn==0.22.0
 python-multipart==0.0.6
---index-url https://download.pytorch.org/whl/cu118
+xformers==0.0.22.post4; sys_platform == 'linux' and platform_machine == 'x86_64'
