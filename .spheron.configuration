@@ -1,0 +1,12 @@
+{
+  "buildCommand": "pip install --no-cache-dir -r requirements.txt",
+  "installCommand": "pip install --no-cache-dir -r requirements.txt",
+  "startCommand": "uvicorn main:app --host 0.0.0.0 --port 3000 --timeout-keep-alive 1200",
+  "framework": "python",
+  "pythonVersion": "3.10",
+  "envVariables": {
+    "PYTHONUNBUFFERED": "1",
+    "TOKENIZERS_PARALLELISM": "false",
+    "PIP_NO_CACHE_DIR": "1"
+  }
+}
