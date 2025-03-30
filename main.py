@@ -1,33 +1,45 @@
 from flask import Flask, request, jsonify
-from diffusers import StableDiffusionPipeline
-import torch
+import requests
 import base64
 from io import BytesIO
-from PIL import Image
 
 app = Flask(__name__)
 
-# Load model
-print("Loading Stable Diffusion model...")
-model = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
-model.to("cuda" if torch.cuda.is_available() else "cpu")
+# AI Image Generation Function
+def generate_image(prompt):
+    URL = "http://provider.spur.gpu3.ai:32333/generate"
+    payload = {"prompt": str(prompt)}
+
+    try:
+        response = requests.post(URL, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        base64_image = data.get("image", "")
+        
+        if not base64_image:
+            return None
+        
+        if "," in base64_image:
+            base64_image = base64_image.split(",")[-1]
+
+        return base64_image
+    except Exception as e:
+        print(f"❌ API Error: {e}")
+        return None
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    # Get the prompt from the request JSON
     data = request.json
-    prompt = data.get("prompt", "A beautiful sunset over the mountains")
+    prompt = data.get("prompt", "")
+    if not prompt:
+        return jsonify({"error": "Prompt is required"}), 400
+    
+    image_base64 = generate_image(prompt)
+    if image_base64:
+        return jsonify({"image": image_base64})
+    else:
+        return jsonify({"error": "Failed to generate image"}), 500
 
-    # Generate image from the model
-    print(f"Generating image for prompt: {prompt}")
-    image = model(prompt).images[0]
-
-    # Convert the image to base64 for easy transmission
-    buffered = BytesIO()
-    image.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-
-    return jsonify({"image": img_str})
-
-if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8001)  # Change port to 8001 or any other port
+if __name__ == '__main__':
+    # Set host to '0.0.0.0' to allow access from external devices
+    app.run(host='0.0.0.0', port=5000)
