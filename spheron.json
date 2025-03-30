@@ -2,5 +2,5 @@
   "installCommand": "pip install -r requirements.txt",
   "buildCommand": "echo 'No build needed'",
   "startCommand": "uvicorn main:app --host 0.0.0.0 --port 8000",
-  "pythonVersion": "3.9"
+  "pythonVersion": "3.10"
 }
