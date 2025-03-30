@@ -1,43 +1,34 @@
-from fastapi import FastAPI, HTTPException
-import requests
-import os
-from fastapi.responses import StreamingResponse
+from flask import Flask, request, jsonify
+from diffusers import StableDiffusionPipeline
+import torch
+import base64
 from io import BytesIO
+from PIL import Image
 
-app = FastAPI()
+app = Flask(__name__)
 
-# Fetch the Spheron GPU URL from environment variable or use default
-SPHERON_GPU_URL = os.getenv("SPHERON_GPU_URL", "http://provider.spur.gpu3.ai:32333")
+# Load model
+print("Loading Stable Diffusion model...")
+model = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5")
+model.to("cuda" if torch.cuda.is_available() else "cpu")
 
-@app.get("/")
-def home():
-    return {"status": "ready", "gpu_service": SPHERON_GPU_URL}
+@app.route('/generate', methods=['POST'])
+def generate():
+    # Get the prompt from the request JSON
+    data = request.json
+    prompt = data.get("prompt", "A beautiful sunset over the mountains")
 
-@app.post("/generate")
-async def generate_image(prompt: str):
-    try:
-        # Request to the Spheron-based AI image generation API
-        response = requests.post(
-            f"{SPHERON_GPU_URL}/api/generate",  # Correct the URL if needed
-            json={"prompt": prompt, "size": "512x512", "steps": 50},  # You may adjust params
-            timeout=60
-        )
-        response.raise_for_status()  # Raise an error if the response was bad
+    # Generate image from the model
+    print(f"Generating image for prompt: {prompt}")
+    image = model(prompt).images[0]
 
-        # Assuming response content is image data (binary)
-        image_data = response.content
+    # Convert the image to base64 for easy transmission
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
 
-        # Convert the binary content into a streaming response for the client
-        image_stream = BytesIO(image_data)
-        return StreamingResponse(image_stream, media_type="image/png")
+    return jsonify({"image": img_str})
 
-    except requests.exceptions.RequestException as e:
-        # If an error occurs while contacting the Spheron service
-        raise HTTPException(status_code=500, detail=f"Error contacting Spheron service: {str(e)}")
-    except Exception as e:
-        # General error handling
-        raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+if __name__ == '__main__':
+    # Run the Flask server
+    app.run(host='0.0.0.0', port=5000)
